@@ -84,55 +84,38 @@
     </div>
 
     <script>
+        // --- LIVE VERSION FOR GOOGLE SHEETS ---
         // --- PASTE YOUR GOOGLE SHEETS CSV URL HERE ---
-        const SHEET_URL = 'PASTE_YOUR_GOOGLE_SHEETS_CSV_URL_HERE';
+        const SHEET_URL = 'https://cors-anywhere.herokuapp.com/https://docs.google.com/spreadsheets/d/e/2PACX-1vR6PtlBFWsp0XUcTwa-Th0VIDOX_KJeENN2rEbtf_IQsTQ3VhSrmhAB4N1t74ZTQ_pl7eJRAc_qNhb8/pub?gid=0&single=true&output=csv';
 
         const selector = document.getElementById('category-selector');
         const display = document.getElementById('quote-display');
 
-        // This function will fetch and process the data
         async function loadQuotes() {
             try {
-                // Fetch the data from the Google Sheet URL
                 const response = await fetch(SHEET_URL);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const csvData = await response.text();
-                
-                // Parse the CSV text into a usable array of objects
                 const quotes = parseCSV(csvData);
-
-                // NOW that we have the quotes, populate the categories
                 populateCategories(quotes);
-                
-                // Set up the event listener for the dropdown
                 selector.addEventListener('change', function() {
                     displayQuote(quotes, this.value);
                 });
-
             } catch (error) {
                 console.error("Failed to load or process quotes:", error);
                 display.innerHTML = '<p class="placeholder">Could not load quotes. Please check the sheet URL and network connection.</p>';
             }
         }
 
-        // This function converts the raw CSV text into an array of quote objects
         function parseCSV(csv) {
-            // Split the text into lines, ignoring any empty lines
             const lines = csv.split('\n').filter(line => line.trim() !== '');
-            
-            // The first line is the header
             const headers = lines[0].split(',').map(h => h.trim());
-            
             const quotes = [];
-            // Loop through the rest of the lines
             for (let i = 1; i < lines.length; i++) {
-                // This regex handles commas inside quoted text, e.g., "text, with a comma"
                 const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-                
                 if (values.length === headers.length) {
-                    // Create an object for each quote
                     const quote = {
                         text: values[1].replace(/^"|"$/g, ''),
                         reference: values[2].replace(/^"|"$/g, ''),
@@ -145,27 +128,18 @@
             return quotes;
         }
 
-        // This function fills the dropdown with categories
         function populateCategories(quotes) {
-            // Get a unique list of categories and sort them alphabetically
             const categories = [...new Set(quotes.map(q => q.category))].sort();
-            
-            // Clear existing options
             selector.innerHTML = '<option value="">-- Choose a category --</option>';
-            
-            // Add a new option for each category
             categories.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat;
                 option.textContent = cat;
                 selector.appendChild(option);
             });
-
-            // Reset the display area
             display.innerHTML = '<p class="placeholder">Your guiding quote will appear here.</p>';
         }
 
-        // This function displays a random quote from the selected category
         function displayQuote(quotes, selectedCategory) {
             if (selectedCategory) {
                 const filteredQuotes = quotes.filter(quote => quote.category === selectedCategory);
@@ -181,7 +155,6 @@
             }
         }
 
-        // Start the whole process when the page loads
         document.addEventListener('DOMContentLoaded', loadQuotes);
     </script>
 </body>
