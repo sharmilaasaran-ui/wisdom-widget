@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Wisdom</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .widget-container {
+            background: #ffffff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+        #category-selector {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            background-color: #fff;
+        }
+        #quote-display {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .quote-text {
+            font-size: 18px;
+            line-height: 1.6;
+            font-style: italic;
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        .quote-reference {
+            font-size: 14px;
+            color: #95a5a6;
+            text-align: right;
+        }
+        .placeholder {
+            color: #bdc3c7;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="widget-container">
+        <h1>Universal Wisdom</h1>
+        <p class="subtitle">Find guidance for your journey.</p>
+        
+        <select id="category-selector">
+            <option value="">-- Choose a category --</option>
+        </select>
+
+        <div id="quote-display">
+            <p class="placeholder">Loading quotes...</p>
+        </div>
+    </div>
+
+    <script>
+        // --- PASTE YOUR GOOGLE SHEETS CSV URL HERE ---
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR6PtlBFWsp0XUcTwa-Th0VIDOX_KJeENN2rEbtf_IQsTQ3VhSrmhAB4N1t74ZTQ_pl7eJRAc_qNhb8/pub?gid=0&single=true&output=csv';
+
+        const selector = document.getElementById('category-selector');
+        const display = document.getElementById('quote-display');
+
+        async function loadQuotes() {
+            try {
+                const response = await fetch(SHEET_URL);
+                if (!response.ok) throw new Error('Network response was not ok.');
+                const csvData = await response.text();
+                
+                const quotes = parseCSV(csvData);
+                populateCategories(quotes);
+                
+                selector.addEventListener('change', function() {
+                    displayQuote(quotes, this.value);
+                });
+
+            } catch (error) {
+                console.error('Failed to load quotes:', error);
+                display.innerHTML = '<p class="placeholder">Sorry, could not load quotes.</p>';
+            }
+        }
+
+        function parseCSV(csv) {
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const quotes = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split('","').map(v => v.replace(/^"|"$/g, ''));
+                if (values.length === headers.length) {
+                    const quote = {
+                        text: values[1],
+                        reference: values[2],
+                        tradition: values[3],
+                        category: values[4]
+                    };
+                    quotes.push(quote);
+                }
+            }
+            return quotes;
+        }
+
+        function populateCategories(quotes) {
+            const categories = [...new Set(quotes.map(q => q.category))].sort();
+            selector.innerHTML = '<option value="">-- Choose a category --</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                selector.appendChild(option);
+            });
+            display.innerHTML = '<p class="placeholder">Your guiding quote will appear here.</p>';
+        }
+
+        function displayQuote(quotes, selectedCategory) {
+            if (selectedCategory) {
+                const filteredQuotes = quotes.filter(quote => quote.category === selectedCategory);
+                if (filteredQuotes.length > 0) {
+                    const randomQuote = filteredQuotes[Math.floor(Math.random() * filteredQuotes.length)];
+                    display.innerHTML = `
+                        <p class="quote-text">"${randomQuote.text}"</p>
+                        <p class="quote-reference">— ${randomQuote.reference} (${randomQuote.tradition})</p>
+                    `;
+                }
+            } else {
+                display.innerHTML = '<p class="placeholder">Your guiding quote will appear here.</p>';
+            }
+        }
+
+        // Load the quotes when the page loads
+        loadQuotes();
+    </script>
+</body>
+</html>
